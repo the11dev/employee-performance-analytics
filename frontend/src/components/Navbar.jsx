@@ -1,10 +1,15 @@
 const TABS = [
-  { id: "employees", label: "Employees" },
-  { id: "add",       label: "Add Employee" },
-  { id: "ai",        label: "AI Report" },
-  { id: "analytics", label: "Analytics" },
+  { id: "employees", label: "Employees", icon: "👥" },
+  { id: "add", label: "Add Employee", icon: "➕" },
+  { id: "ai", label: "AI Report", icon: "🤖" },
+  { id: "analytics", label: "Analytics", icon: "📊" },
 ];
 
+/**
+ * Navbar
+ * Sticky top bar with brand, tab navigation, and logout button.
+ * The user's name is displayed in a small chip when logged in.
+ */
 export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
   return (
     <nav className="navbar">
@@ -21,20 +26,22 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
             className={`tab-btn ${activeTab === tab.id ? "active" : ""}`}
             onClick={() => setActiveTab(tab.id)}
           >
+            <span className="tab-icon">{tab.icon}</span>
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* User session badge + logout */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {user && (
-          <div className="user-chip">
-            {user.name?.split(" ")[0]}
+          <span className="user-chip">
+            👤 {user.name?.split(" ")[0]}
             <span className="user-chip-role">{user.role}</span>
-          </div>
+          </span>
         )}
-        <button className="btn btn-secondary btn-sm" onClick={onLogout}>
-          Logout
+        <button className="btn btn-secondary btn-sm" onClick={onLogout} title="Logout">
+          🚪 Logout
         </button>
       </div>
     </nav>

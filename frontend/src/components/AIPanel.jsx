@@ -3,212 +3,238 @@ import axios from "axios";
 
 const API = "/api";
 
+// ─── Score tier helper (shared display logic) ──────────────────────────────────
 function getScoreTier(score) {
   if (score >= 85) return { label: "Excellent", cls: "score-excellent" };
-  if (score >= 70) return { label: "Good",       cls: "score-good" };
-  if (score >= 50) return { label: "Average",    cls: "score-average" };
-  return              { label: "Poor",           cls: "score-poor" };
+  if (score >= 70) return { label: "Good", cls: "score-good" };
+  if (score >= 50) return { label: "Average", cls: "score-average" };
+  return { label: "Poor", cls: "score-poor" };
 }
 
-/* ── Ranking table row ───────────────────────────────────────────────────────── */
-function RankingRow({ emp }) {
-  const tier = getScoreTier(emp.score);
-  const medals = ["🥇", "🥈", "🥉"];
-  const rankLabel = emp.rank <= 3 ? medals[emp.rank - 1] : `#${emp.rank}`;
-  const barCls = emp.score >= 85 ? "progress-high" : emp.score >= 70 ? "progress-medium-good" : emp.score >= 50 ? "progress-medium" : "progress-low";
-
-  return (
-    <tr>
-      <td style={{ width: 44, textAlign: "center", fontSize: "0.9rem" }}>{rankLabel}</td>
-      <td>
-        <div style={{ fontWeight: 600, fontSize: "0.85rem" }}>{emp.name}</div>
-        <div style={{ fontSize: "0.73rem", color: "var(--text-3)" }}>{emp.department}</div>
-      </td>
-      <td style={{ width: 120 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div className="progress-track" style={{ flex: 1 }}>
-            <div className={`progress-fill ${barCls}`} style={{ width: `${emp.score}%` }} />
-          </div>
-          <span className={`score-badge ${tier.cls}`} style={{ flexShrink: 0 }}>{emp.score}</span>
-        </div>
-      </td>
-      <td><span className={`tier-label ${tier.cls}`}>{tier.label}</span></td>
-      <td style={{ fontSize: "0.78rem", color: "var(--text-2)", maxWidth: 300 }}>{emp.feedback}</td>
-    </tr>
-  );
-}
-
-/* ── Promotion card ──────────────────────────────────────────────────────────── */
+// ─── Promotion candidate card ──────────────────────────────────────────────────
 function PromotionCard({ candidate, rank }) {
+  const rankEmoji = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`;
   return (
-    <div className="ai-card promo-card">
+    <div className="card ai-card promo-card">
       <div className="card-header">
-        <div>
-          <div className="card-title">{candidate.name}</div>
-          <div className="card-subtitle">{candidate.department}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div className="ai-rank-badge">{rankEmoji}</div>
+          <div>
+            <div className="card-title">{candidate.name}</div>
+            <div className="card-subtitle">🏢 {candidate.department}</div>
+          </div>
         </div>
-        <span className="score-badge score-excellent">{candidate.score}</span>
+        <span className={`score-badge score-excellent`} style={{ fontSize: "1.1rem", padding: "6px 14px" }}>
+          {candidate.score}
+        </span>
       </div>
-      <p style={{ fontSize: "0.82rem", color: "var(--text-2)", lineHeight: 1.65 }}>{candidate.reason}</p>
+      <div className="ai-explanation">🚀 {candidate.reason}</div>
     </div>
   );
 }
 
-/* ── Training card ───────────────────────────────────────────────────────────── */
+// ─── Training recommendation card ─────────────────────────────────────────────
 function TrainingCard({ emp }) {
   return (
-    <div className="ai-card training-card">
+    <div className="card ai-card training-card">
       <div className="card-header">
         <div>
           <div className="card-title">{emp.name}</div>
-          <div className="card-subtitle">{emp.department}</div>
+          <div className="card-subtitle">🏢 {emp.department} · Score: {emp.score}/100</div>
         </div>
-        <span className="score-badge score-poor">{emp.score}</span>
+        <span className={`score-badge score-poor`}>{emp.score}</span>
       </div>
 
       {emp.skillGaps?.length > 0 && (
-        <div style={{ marginBottom: 10 }}>
-          <p style={{ fontSize: "0.72rem", color: "var(--text-3)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>Skill Gaps</p>
-          <div className="skills-row" style={{ marginTop: 0 }}>
-            {emp.skillGaps.map((s, i) => <span key={i} className="badge badge-gap">{s}</span>)}
+        <div style={{ marginTop: 10 }}>
+          <p style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Skill Gaps Identified
+          </p>
+          <div className="skills-row">
+            {emp.skillGaps.map((s, i) => <span key={i} className="badge badge-gap">⚠️ {s}</span>)}
           </div>
         </div>
       )}
 
       {emp.suggestedCourses?.length > 0 && (
-        <div style={{ marginBottom: 10 }}>
-          <p style={{ fontSize: "0.72rem", color: "var(--text-3)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>Suggested Courses</p>
-          <div className="skills-row" style={{ marginTop: 0 }}>
-            {emp.suggestedCourses.map((c, i) => <span key={i} className="badge badge-course">{c}</span>)}
+        <div style={{ marginTop: 10 }}>
+          <p style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Suggested Courses
+          </p>
+          <div className="skills-row">
+            {emp.suggestedCourses.map((c, i) => <span key={i} className="badge badge-course">📚 {c}</span>)}
           </div>
         </div>
       )}
 
-      <div className="ai-interview-q">{emp.trainingPlan}</div>
+      <div className="ai-interview-q">📋 {emp.trainingPlan}</div>
     </div>
   );
 }
 
-const SECTIONS = [
-  { id: "rankings", label: "Rankings"   },
-  { id: "promo",    label: "Promotions" },
-  { id: "training", label: "Training"   },
-  { id: "summary",  label: "Summary"    },
-];
+// ─── Employee ranking card ─────────────────────────────────────────────────────
+function RankingCard({ emp }) {
+  const tier = getScoreTier(emp.score);
+  const rankEmoji = emp.rank === 1 ? "🥇" : emp.rank === 2 ? "🥈" : emp.rank === 3 ? "🥉" : `#${emp.rank}`;
 
+  const barClass =
+    emp.score >= 85 ? "progress-high"
+      : emp.score >= 70 ? "progress-medium-good"
+        : emp.score >= 50 ? "progress-medium"
+          : "progress-low";
+
+  return (
+    <div className="card ai-card" style={{ padding: "16px 20px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 32, textAlign: "center", fontSize: emp.rank <= 3 ? "1.3rem" : "0.9rem", fontWeight: 700, color: "var(--text-muted)", flexShrink: 0 }}>
+          {rankEmoji}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <span className="card-title" style={{ fontSize: "0.92rem" }}>{emp.name}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className={`tier-label ${tier.cls}`} style={{ fontSize: "0.73rem" }}>{tier.label}</span>
+              <span className={`score-badge ${tier.cls}`}>{emp.score}</span>
+            </span>
+          </div>
+          <div className="progress-track" style={{ height: 5 }}>
+            <div className={`progress-fill ${barClass}`} style={{ width: `${emp.score}%` }} />
+          </div>
+          <div className="card-subtitle" style={{ marginTop: 6 }}>{emp.feedback}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * AIPanel
+ * Triggers POST /api/ai/recommend which pulls all employees from the DB,
+ * sends them to OpenRouter, and returns a structured JSON with four sections.
+ * Each section is rendered in its own tab within the results area.
+ */
 export default function AIPanel({ token }) {
-  const [results, setResults]           = useState(null);
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState("");
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [activeSection, setActiveSection] = useState("rankings");
 
   const handleGenerate = async () => {
     setError(""); setLoading(true); setResults(null);
     try {
-      const { data } = await axios.post(`${API}/ai/recommend`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { data } = await axios.post(
+        `${API}/ai/recommend`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setResults(data.data);
-      setActiveSection("rankings");
+      setActiveSection("rankings"); // default view after load
     } catch (err) {
       setError(err.response?.data?.message || "AI recommendation failed. Check your OpenRouter API key.");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const counts = {
-    rankings: results?.employeeRankings?.length,
-    promo:    results?.promotionCandidates?.length,
-    training: results?.trainingRecommendations?.length,
-  };
+  const SECTIONS = [
+    { id: "rankings", label: "🏆 Rankings", count: results?.employeeRankings?.length },
+    { id: "promo", label: "🚀 Promotions", count: results?.promotionCandidates?.length },
+    { id: "training", label: "📚 Training", count: results?.trainingRecommendations?.length },
+    { id: "summary", label: "📊 Summary", count: null },
+  ];
 
   return (
     <div>
       <div className="page-header">
-        <h1>AI Report</h1>
-        <p>Generate promotion recommendations, training plans, and performance rankings using AI.</p>
+        <h1>AI Recommendations</h1>
+        <p>Generate promotion suggestions, training plans, rankings, and feedback powered by OpenRouter.</p>
       </div>
 
-      {/* Trigger bar */}
+      {/* Trigger panel */}
       <div className="card ai-trigger-card">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontWeight: 600, marginBottom: 2 }}>Generate Performance Report</div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-2)" }}>
-              Powered by OpenRouter · GPT-4o mini · Analyses all employees in the database
-            </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: 4 }}>🤖 AI Performance Analysis</h2>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+              Powered by OpenRouter · GPT-4o mini · Analyses all employees in your database
+            </p>
           </div>
-          <button className="btn btn-ai" onClick={handleGenerate} disabled={loading} style={{ flexShrink: 0 }}>
-            {loading ? <><span className="spinner" /> Analysing...</> : "Run AI Report"}
+          <button
+            className="btn btn-ai"
+            onClick={handleGenerate}
+            disabled={loading}
+            style={{ flexShrink: 0 }}
+          >
+            {loading ? <><span className="spinner" /> Analysing...</> : "✨ Generate AI Report"}
           </button>
         </div>
+
         {error && (
-          <div style={{ marginTop: 14, padding: "9px 12px", background: "var(--red-dim)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "var(--radius)", color: "#f87171", fontSize: "0.8rem" }}>
-            {error}
+          <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(239,68,68,0.1)", borderRadius: 10, border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", fontSize: "0.87rem" }}>
+            ⚠️ {error}
           </div>
         )}
       </div>
 
+      {/* Loading state */}
       {loading && (
-        <div style={{ textAlign: "center", padding: "56px 24px", color: "var(--text-2)" }}>
-          <span className="spinner" style={{ width: 28, height: 28, borderWidth: 2 }} />
-          <p style={{ marginTop: 14, fontSize: "0.83rem" }}>Analysing your team — this takes a few seconds.</p>
+        <div style={{ textAlign: "center", padding: "64px 24px", color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: 16, animation: "spin 1.5s linear infinite", display: "inline-block" }}>🤖</div>
+          <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
+            AI is analysing your team...
+          </h3>
+          <p style={{ fontSize: "0.88rem" }}>This takes a few seconds — evaluating performance scores and generating personalised feedback.</p>
         </div>
       )}
 
+      {/* Empty state */}
       {!results && !loading && (
-        <div className="empty-state">
-          <div className="empty-icon">○</div>
-          <h3>No report generated yet</h3>
-          <p>Click "Run AI Report" to get promotions, training plans, and rankings.</p>
+        <div className="empty-state" style={{ marginTop: 32 }}>
+          <div className="empty-icon">🤖</div>
+          <h3>Ready to analyse</h3>
+          <p>Click "Generate AI Report" to get promotion recommendations, training plans, employee rankings, and more.</p>
         </div>
       )}
 
+      {/* Results */}
       {results && !loading && (
         <>
+          {/* Section tabs */}
           <div className="section-tabs">
             {SECTIONS.map((s) => (
-              <button key={s.id}
+              <button
+                key={s.id}
                 className={`section-tab-btn ${activeSection === s.id ? "active" : ""}`}
-                onClick={() => setActiveSection(s.id)}>
+                onClick={() => setActiveSection(s.id)}
+              >
                 {s.label}
-                {counts[s.id] != null && (
-                  <span className="section-tab-count">{counts[s.id]}</span>
-                )}
+                {s.count != null && <span className="section-tab-count">{s.count}</span>}
               </button>
             ))}
           </div>
 
-          {/* Rankings — table layout */}
+          {/* Rankings */}
           {activeSection === "rankings" && (
-            <div style={{ overflowX: "auto" }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Rank</th><th>Employee</th><th>Score</th><th>Tier</th><th>Feedback</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.employeeRankings?.map((emp) => (
-                    <RankingRow key={emp.name} emp={emp} />
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {results.employeeRankings?.map((emp) => (
+                <RankingCard key={emp.name} emp={emp} />
+              ))}
             </div>
           )}
 
           {/* Promotions */}
           {activeSection === "promo" && (
             results.promotionCandidates?.length ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {results.promotionCandidates.map((c, i) => (
                   <PromotionCard key={c.name} candidate={c} rank={i + 1} />
                 ))}
               </div>
             ) : (
               <div className="empty-state">
-                <div className="empty-icon">○</div>
-                <h3>No promotion candidates</h3>
-                <p>Employees scoring 80 or above will appear here.</p>
+                <div className="empty-icon">🚀</div>
+                <h3>No promotion candidates identified</h3>
+                <p>Employees scoring 80+ will appear here as promotion-ready.</p>
               </div>
             )
           )}
@@ -216,14 +242,14 @@ export default function AIPanel({ token }) {
           {/* Training */}
           {activeSection === "training" && (
             results.trainingRecommendations?.length ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {results.trainingRecommendations.map((e) => (
                   <TrainingCard key={e.name} emp={e} />
                 ))}
               </div>
             ) : (
               <div className="empty-state">
-                <div className="empty-icon">○</div>
+                <div className="empty-icon">📚</div>
                 <h3>No training plans needed</h3>
                 <p>All employees are performing above the threshold (score ≥ 70).</p>
               </div>
@@ -232,28 +258,26 @@ export default function AIPanel({ token }) {
 
           {/* Summary */}
           {activeSection === "summary" && results.summary && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div className="stats-row">
-                <div className="stat-card">
-                  <div className="stat-value">{results.summary.totalEmployees}</div>
-                  <div className="stat-label">Total Employees</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-value" style={{ color: "var(--accent)" }}>{results.summary.avgScore}</div>
-                  <div className="stat-label">Average Score</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-value" style={{ color: "var(--green)" }}>{results.summary.topPerformers}</div>
-                  <div className="stat-label">Top Performers</div>
-                </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+              <div className="stat-card">
+                <div className="stat-value">{results.summary.totalEmployees}</div>
+                <div className="stat-label">Total Employees</div>
               </div>
-              <div className="card">
-                <p style={{ fontSize: "0.72rem", color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  Overall Insight
-                </p>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-2)", lineHeight: 1.75 }}>
-                  {results.summary.overallInsight}
-                </p>
+              <div className="stat-card">
+                <div className="stat-value" style={{ color: "#34d399" }}>{results.summary.avgScore}</div>
+                <div className="stat-label">Avg. Score</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value" style={{ color: "#fbbf24" }}>{results.summary.topPerformers}</div>
+                <div className="stat-label">Top Performers</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value" style={{ color: "#f87171" }}>{results.summary.needsAttention}</div>
+                <div className="stat-label">Needs Attention</div>
+              </div>
+              <div className="card" style={{ gridColumn: "1 / -1", background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))" }}>
+                <h3 style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: 10, color: "var(--accent-light)" }}>📊 Overall Team Insight</h3>
+                <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.8 }}>{results.summary.overallInsight}</p>
               </div>
             </div>
           )}
